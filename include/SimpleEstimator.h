@@ -12,6 +12,10 @@ class SimpleEstimator : public Estimator {
 
     std::shared_ptr<SimpleGraph> graph;
 
+    std::vector<uint32_t> cardOut;
+    std::vector<uint32_t> cardPaths;
+    std::vector<uint32_t> cardIn;
+
 public:
     explicit SimpleEstimator(std::shared_ptr<SimpleGraph> &g);
     ~SimpleEstimator() = default;
