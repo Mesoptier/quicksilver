@@ -2,6 +2,7 @@
 // Created by Nikolay Yakovets on 2018-02-01.
 //
 
+#include <numeric>
 #include "SimpleGraph.h"
 #include "SimpleEstimator.h"
 
@@ -49,14 +50,48 @@ void SimpleEstimator::prepare() {
         cardOut[label] = setOut[label].size();
         cardIn[label] = setIn[label].size();
     }
+
+    totalOut = std::accumulate(cardOut.begin(), cardOut.end(), (uint32_t) 0);
+    totalPaths = std::accumulate(cardPaths.begin(), cardPaths.end(), (uint32_t) 0);
+    totalIn = std::accumulate(cardIn.begin(), cardIn.end(), (uint32_t) 0);
 }
 
 cardStat SimpleEstimator::estimate(RPQTree *q) {
-    uint32_t edgeLabel = std::stoi(q->data.substr(0, q->data.size() - 1));
+    uint32_t noOut = totalOut;
+    uint32_t noPaths = totalPaths;
+    uint32_t noIn = totalIn;
 
-    uint32_t noOut = cardOut[edgeLabel];
-    uint32_t noPaths = cardPaths[edgeLabel];
-    uint32_t noIn = cardIn[edgeLabel];
+    auto edges = reduceQueryTree(q);
 
-    return cardStat {noOut, noPaths, noIn};
+    for (const auto &edge : edges) {
+        bool reverse = edge.substr(edge.size() - 1) == "-";
+        uint32_t edgeLabel =
+            static_cast<uint32_t>(std::stoi(edge.substr(0, edge.size() - 1)));
+
+        float propOut = (float)cardOut[edgeLabel] / totalOut;
+        noOut *= propOut;
+
+        float propPaths = (float)cardPaths[edgeLabel] / totalPaths;
+        noPaths += noPaths * propPaths;
+
+        float propIn = (float)cardIn[edgeLabel] / totalIn;
+        noIn *= propIn;
+    }
+
+    return cardStat { noOut, noPaths, noIn };
+}
+
+std::vector<std::string> SimpleEstimator::reduceQueryTree(RPQTree *q) {
+    std::vector<std::string> vec;
+    reduceQueryTree(q, vec);
+    return vec;
+}
+
+void SimpleEstimator::reduceQueryTree(RPQTree *q, std::vector<std::string> &vec) {
+    if (q->isLeaf()) {
+        vec.push_back(q->data);
+    } else {
+        reduceQueryTree(q->left, vec);
+        reduceQueryTree(q->right, vec);
+    }
 }
