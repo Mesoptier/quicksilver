@@ -52,7 +52,7 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
 
     uint32_t noOut = 0;
     uint32_t noIn = 0;
-    uint32_t noPaths = 0;
+    uint32_t noPaths = graph->getNoEdges();
 
     for (size_t i = 0; i != edges.size(); i++) {
         const auto &edge = edges[i];
@@ -62,7 +62,6 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
 
         if (i == 0) {
             noOut = card_labels_out[label];
-            noPaths = card_labels[label];
         }
         if (i == edges.size() - 1) {
             noIn = card_labels_in[label];
