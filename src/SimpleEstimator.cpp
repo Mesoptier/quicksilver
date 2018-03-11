@@ -1,80 +1,84 @@
+//
+// Created by Nikolay Yakovets on 2018-02-01.
+//
+
 #include <numeric>
 #include "SimpleGraph.h"
 #include "SimpleEstimator.h"
-//#include "prettyprint.hpp"
 
-SimpleEstimator::SimpleEstimator(std::shared_ptr<SimpleGraph> &g) {
+SimpleEstimator::SimpleEstimator(std::shared_ptr<SimpleGraph> &g){
+
+    // works only with SimpleGraph
     graph = g;
 }
 
 void SimpleEstimator::prepare() {
-    // entry_counts:    out_edge -> count
-    // nested_counts:   in_edge -> out_edge -> count
-    // nested_degrees:  in_edge -> out_edge -> count
+    std::vector<std::unordered_set<uint32_t>> setOut;
+    std::vector<std::unordered_set<uint32_t>> setIn;
 
-    std::map<uint32_t, std::map<uint32_t, uint32_t>> nested_counts;
+    setOut.resize(graph->getNoLabels());
+    cardOut.resize(graph->getNoLabels());
+
+    cardPaths.resize(graph->getNoLabels());
+
+    setIn.resize(graph->getNoLabels());
+    cardIn.resize(graph->getNoLabels());
+
+    for (uint32_t label = 0; label != graph->getNoLabels(); label++) {
+        cardPaths[label] = 0;
+    }
 
     for (uint32_t vertex = 0; vertex != graph->getNoVertices(); vertex++) {
-        //for (uint32_t vertex = 0; vertex != 10; vertex++) {
-        auto out_edges = graph->adj[vertex];
-        auto in_edges = graph->reverse_adj[vertex];
+        auto adj = graph->adj[vertex];
+        auto reverse_adj = graph->reverse_adj[vertex];
 
-        for (const auto &out_pair : out_edges) {
-            auto out_edge = out_pair.first;
+        for (uint32_t i = 0; i != adj.size(); i++) {
+            auto pair = adj[i];
 
-            entry_counts[out_edge]++;
+            setOut[pair.first].insert(vertex);
+            cardPaths[pair.first]++;
+        }
 
-            for (const auto &in_pair : in_edges) {
-                auto in_edge = in_pair.first;
+        for (uint32_t i = 0; i != reverse_adj.size(); i++) {
+            auto pair = reverse_adj[i];
 
-                nested_counts[in_edge][out_edge]++;
-            }
+            setIn[pair.first].insert(vertex);
         }
     }
 
-    for (uint32_t in_edge = 0; in_edge != graph->getNoLabels(); in_edge++) {
-        for (uint32_t out_edge = 0; out_edge != graph->getNoLabels();
-             out_edge++) {
-            float degree = (float) nested_counts[in_edge][out_edge]
-                / entry_counts[out_edge];
-            nested_degrees[in_edge][out_edge] = degree;
-        }
+    for (uint32_t label = 0; label != graph->getNoLabels(); label++) {
+        cardOut[label] = setOut[label].size();
+        cardIn[label] = setIn[label].size();
     }
 
-    //std::cout << entry_counts << std::endl;
-    //std::cout << nested_degrees << std::endl;
+    totalOut = std::accumulate(cardOut.begin(), cardOut.end(), (uint32_t) 0);
+    totalPaths = std::accumulate(cardPaths.begin(), cardPaths.end(), (uint32_t) 0);
+    totalIn = std::accumulate(cardIn.begin(), cardIn.end(), (uint32_t) 0);
 }
 
 cardStat SimpleEstimator::estimate(RPQTree *q) {
-    uint32_t noPaths = 0;
+    uint32_t noOut = totalOut;
+    uint32_t noPaths = totalPaths;
+    uint32_t noIn = totalIn;
 
     auto edges = reduceQueryTree(q);
-    uint32_t prev_edge = 0;
-    uint32_t prev_count = 0;
 
-    for (size_t i = 0; i != edges.size(); i++) {
-        auto edge_def = edges[i];
-        bool reverse = edge_def.substr(edge_def.size() - 1) == "-";
-        auto edge = static_cast<uint32_t>(
-            std::stoi(edge_def.substr(0, edge_def.size() - 1))
-        );
+    for (const auto &edge : edges) {
+        bool reverse = edge.substr(edge.size() - 1) == "-";
+        uint32_t edgeLabel =
+            static_cast<uint32_t>(std::stoi(edge.substr(0, edge.size() - 1)));
 
-        if (i == 0) {
-            prev_count = noPaths = entry_counts[edge];
-        } else {
-            auto degree = nested_degrees[prev_edge][edge];
-            auto count = static_cast<uint32_t>(prev_count * degree);
+        float propOut = (float)cardOut[edgeLabel] / totalOut;
+        noOut *= propOut;
 
-            //std::cout << std::endl << count;
-            prev_count = count;
+        float propPaths = (float)cardPaths[edgeLabel] / totalPaths;
+        noPaths += noPaths * propPaths;
 
-            noPaths = static_cast<uint32_t>(noPaths * degree);
-        }
-
-        prev_edge = edge;
+        float propIn = (float)cardIn[edgeLabel] / totalIn;
+        noIn *= propIn;
     }
 
-    return cardStat {1, noPaths, 1};
+    return cardStat { noOut, noPaths, noIn };
 }
 
 std::vector<std::string> SimpleEstimator::reduceQueryTree(RPQTree *q) {
@@ -83,10 +87,7 @@ std::vector<std::string> SimpleEstimator::reduceQueryTree(RPQTree *q) {
     return vec;
 }
 
-void SimpleEstimator::reduceQueryTree(
-    RPQTree *q,
-    std::vector<std::string> &vec
-) {
+void SimpleEstimator::reduceQueryTree(RPQTree *q, std::vector<std::string> &vec) {
     if (q->isLeaf()) {
         vec.push_back(q->data);
     } else {
