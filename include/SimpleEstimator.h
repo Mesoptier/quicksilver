@@ -1,7 +1,3 @@
-//
-// Created by Nikolay Yakovets on 2018-02-01.
-//
-
 #ifndef QS_SIMPLEESTIMATOR_H
 #define QS_SIMPLEESTIMATOR_H
 
@@ -11,27 +7,20 @@
 class SimpleEstimator : public Estimator {
 
     std::shared_ptr<SimpleGraph> graph;
-
-    std::vector<uint32_t> cardOut;
-    std::vector<uint32_t> cardPaths;
-    std::vector<uint32_t> cardIn;
-
-    uint32_t totalOut;
-    uint32_t totalPaths;
-    uint32_t totalIn;
+    std::map<uint32_t, uint32_t> entry_counts;
+    std::map<uint32_t, std::map<uint32_t, float>> nested_degrees;
 
 public:
     explicit SimpleEstimator(std::shared_ptr<SimpleGraph> &g);
     ~SimpleEstimator() = default;
 
-    void prepare() override ;
-    cardStat estimate(RPQTree *q) override ;
+    void prepare() override;
+    cardStat estimate(RPQTree *q) override;
 
 private:
     std::vector<std::string> reduceQueryTree(RPQTree *q);
     void reduceQueryTree(RPQTree *q, std::vector<std::string> &vec);
 
 };
-
 
 #endif //QS_SIMPLEESTIMATOR_H
