@@ -1,3 +1,4 @@
+#include <memory>
 #include <iostream>
 #include <chrono>
 #include <SimpleGraph.h>

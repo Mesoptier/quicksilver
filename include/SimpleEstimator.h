@@ -4,7 +4,7 @@
 
 #ifndef QS_SIMPLEESTIMATOR_H
 #define QS_SIMPLEESTIMATOR_H
-
+#include <memory>
 #include "Estimator.h"
 #include "SimpleGraph.h"
 
