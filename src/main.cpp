@@ -6,25 +6,25 @@
 #include <SimpleEstimator.h>
 #include <SimpleEvaluator.h>
 
-
 struct query {
-    std::string s;
-    std::string path;
-    std::string t;
+	std::string s;
+	std::string path;
+	std::string t;
 
-    void print() {
-        std::cout << s << ", " << path << ", " << t << std::endl;
-    }
+	void print() {
+		std::cout << s << ", " << path << ", " << t << std::endl;
+	}
 };
 
 std::vector<query> parseQueries(std::string &fileName) {
 
-    std::vector<query> queries {};
+	std::vector<query> queries { };
 
-    std::string line;
-    std::ifstream graphFile { fileName };
+	std::string line;
+	std::ifstream graphFile { fileName };
 
-    std::regex edgePat (R"((.+),(.+),(.+))");
+	std::regex edgePat(
+			R"((.+),(.+),(.+))");
 
     while(std::getline(graphFile, line)) {
         std::smatch matches;
