@@ -9,6 +9,7 @@
 #define NOTSIMPLEGRAPH_H_
 
 #include <unordered_map>
+#include <map>
 #include <unordered_set>
 #include <vector>
 #include <iostream>
@@ -18,8 +19,8 @@
 
 class SimpleGraph: public Graph {
 public:
-	std::unordered_map<uint32_t, std::vector<std::pair<uint32_t,uint32_t>>> adj;
-    std::unordered_map<uint32_t, std::vector<std::pair<uint32_t,uint32_t>>> reverse_adj; // vertex adjacency list
+	std::map<uint32_t, std::vector<std::pair<uint32_t,uint32_t>>> adj;
+    std::map<uint32_t, std::vector<std::pair<uint32_t,uint32_t>>> reverse_adj; // vertex adjacency list
 
     SimpleGraph() : V(0), L(0) {};
     ~SimpleGraph() = default;
